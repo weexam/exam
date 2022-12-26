@@ -3,20 +3,36 @@
     <div v-for="(q, i) in questions" :key="i" class="question">
       <div class="idnum">
         <span class="num">{{ i + 1 }}.</span>
+        <span class="del" @click="deleteQuestion(i)">x</span>
       </div>
       <div class="body">
         <div class="subject">
           <div class="desc" style="font-weight: bold">
-            <Editor v-model.trim="q.desc" :placeholder="'题目'"></Editor>
+            <Editor
+              v-model.trim="q.desc"
+              :placeholder="'题目'"
+              @delete="deleteQuestion(i)"
+              @enter="newOption(q, i, -1)"
+            ></Editor>
           </div>
         </div>
         <div class="options" v-if="q.type != '填空题' && q.type != '主观题'">
           <div v-for="(item, ii) in q.items" :key="ii" class="items">
             <label>
               <input
+                v-if="q.type == '多选题'"
                 :type="q.type == '多选题' ? 'checkbox' : 'radio'"
                 :name="i"
+                v-model="item.checked"
               />
+              <input
+                v-else
+                :type="q.type == '多选题' ? 'checkbox' : 'radio'"
+                :name="i"
+                :value="ii"
+                v-model="q.select"
+              />
+
               <span>{{ String.fromCharCode(65 + ii) }}</span>
             </label>
             <Editor
@@ -24,17 +40,42 @@
               v-model.trim="item.label"
               @enter="newOption(q, i, ii)"
               :placeholder="'选项'"
+              class="option"
+              @delete="delOptions(q, i, ii)"
             ></Editor>
+            <span
+              v-if="q.type != '判断题' && q.items.length > 1"
+              class="del"
+              @click="delOptions(q, i, ii)"
+              >x</span
+            >
           </div>
         </div>
 
-        <div>score:<input type="number" v-model="q.score" /></div>
-        <div>answer:{{ q.answer }}</div>
         <div>
+          score:<input type="number" min="1" max="100" v-model="q.score" />
+        </div>
+        <div>
+          answer:
+
+          <template v-for="(o, oi) in q.items" :key="oi">
+            <span v-if="q.type == '多选题' && o.checked" class="selectAnswer">{{
+              String.fromCharCode(65 + oi)
+            }}</span>
+            <span
+              v-else-if="q.type != '多选题' && q.select === oi"
+              class="selectAnswer"
+              >{{ String.fromCharCode(65 + oi) }}</span
+            >
+          </template>
+        </div>
+        <div style="display: flex">
           <label>
             <span>analysis</span>
           </label>
-          <Editor v-model.trim="q.analysis"></Editor>
+          <div style="background: #fcf8e3">
+            <Editor v-model.trim="q.analysis"></Editor>
+          </div>
         </div>
       </div>
     </div>
@@ -57,6 +98,9 @@ export default {
     };
   },
   methods: {
+    deleteQuestion(i) {
+      this.questions.splice(i, 1);
+    },
     addQuestion(type) {
       if (type == "判断题") {
         this.questions.push({
@@ -66,7 +110,7 @@ export default {
           score: 1,
           analysis: "<解析>",
           items: ["对", "错"].map((e) => {
-            return { id: 1, label: e, checked: 0 };
+            return { id: 1, label: e, checked: "" };
           }),
         });
       } else
@@ -74,10 +118,29 @@ export default {
           type: type,
           desc: "",
           answer: "参考答案",
+          select: "",
           score: 1,
           analysis: "<解析>",
-          items: [{ id: 1, label: "", checked: 1 }],
+          items: [{ id: 1, label: "", checked: "" }],
         });
+
+      this.$nextTick(() => {
+        document
+          .querySelectorAll(".question")
+          [this.questions.length - 1].scrollIntoView();
+      });
+    },
+    delOptions(question, qindex, index) {
+      if (question.items.length > 1) {
+        question.items.splice(index, 1);
+        this.$nextTick(function () {
+          let el = document.querySelector(
+            "#option" + qindex + "_" + (index - 1) + ".div-input"
+          );
+          console.log(el);
+          this.placeCaretAtEnd(el);
+        });
+      }
     },
     newOption(question, qindex, index) {
       if (question.type == "判断题") return;
@@ -85,7 +148,7 @@ export default {
         question.items.splice(index + 1, 0, {
           id: 1,
           label: "",
-          checked: 0,
+          checked: "",
         });
       }
       this.$nextTick(function () {
@@ -134,6 +197,7 @@ export default {
 .subject .desc {
   flex-grow: 1;
 }
+
 .items {
   display: flex;
   line-height: 1.5em;
@@ -143,9 +207,7 @@ input[type="checkbox"] {
   overflow: hidden;
   margin-right: 5px;
 }
-.del {
-  margin-right: 10px;
-}
+
 .num {
 }
 .idnum {
@@ -156,6 +218,8 @@ input[type="checkbox"] {
 }
 .question {
   display: flex;
+  padding: 15px 0;
+  user-select: none;
 }
 .op {
   position: fixed;
@@ -176,5 +240,41 @@ input[type="number"] {
   outline: none;
   width: 60px;
   text-align: center;
+}
+.body {
+  flex-grow: 1;
+}
+.idnum .del {
+  display: block;
+  color: red;
+  font-weight: bold;
+}
+.option {
+  flex-grow: 1;
+}
+.items .del {
+  color: red;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+.items label {
+  width: 35px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.del {
+  cursor: pointer;
+  user-select: none;
+}
+.num {
+  display: block;
+  user-select: none;
+}
+.selectAnswer {
+  color: blue;
+  font-weight: bold;
+}
+::v-deep .desc .div-input {
+  width: 100%;
 }
 </style>

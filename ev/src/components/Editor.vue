@@ -13,6 +13,7 @@
       placeholder_hide: modelValue.length > 0,
     }"
     @keydown.enter.prevent="enter($event)"
+    @keydown.delete="handleDelete($event)"
     @paste="handlePaste($event)"
   ></div>
 </template>
@@ -22,7 +23,7 @@ import { placeCaretAtEnd } from "@/Browser";
 export default {
   name: "DivInput",
   props: ["modelValue", "placeholder"],
-  emits: ["update:modelValue", "enter"],
+  emits: ["update:modelValue", "enter", "delete"],
   data() {
     return {
       ischecked: false,
@@ -39,6 +40,9 @@ export default {
     },
   },
   methods: {
+    handleDelete(event) {
+      if (this.modelValue.length == 0) this.$emit("delete");
+    },
     handlePaste(event) {
       const items = (event.clipboardData || window.clipboardData).items;
       let file = null;
@@ -127,6 +131,7 @@ export default {
   border-bottom: 1px solid #ccc;
   outline: none;
   padding: 0 5px;
+  width: 100%;
 }
 .empty {
   background: transparent url(enter.gif) no-repeat;
