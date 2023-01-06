@@ -1,14 +1,20 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+import { createApp } from "vue";
+import { createPinia } from "pinia";
 
-import App from './App.vue'
-import router from './router'
+import App from "./App.vue";
+import router from "./router";
 
-import './assets/main.css'
+import "./assets/main.css";
 
-const app = createApp(App)
+// 导入截屏插件
+import screenShort from "vue-web-screen-shot";
 
-app.use(createPinia())
-app.use(router)
+const app = createApp(App);
 
-app.mount('#app')
+app.use(createPinia());
+app.use(router);
+
+// 使用截屏插件
+app.use(screenShort, { enableWebRtc: false });
+
+app.mount("#app");

@@ -1,8 +1,94 @@
 <template>
   <div class="about">
-    <video
-      src="file:///Users/alexwang/Downloads/122519_001-1pon-1080p/rh2048.com@122519_001-1pon-1080p.mp4"
-    ></video>
+    <div>
+      <div>考卷名称：</div>
+      <div>分类：</div>
+      <div>答题时间(分钟)：</div>
+    </div>
+    <div v-for="(q, i) in questions" :key="i" class="question">
+      <div class="idnum">
+        <span class="num">{{ i + 1 }}.</span>
+        <span class="del" @click="deleteQuestion(i)">x</span>
+      </div>
+      <div class="body">
+        <div class="subject">
+          <div class="desc" style="font-weight: bold">
+            <Editor
+              v-model.trim="q.desc"
+              :placeholder="'题目'"
+              @delete="deleteQuestion(i)"
+              @enter="newOption(q, i, -1)"
+            ></Editor>
+          </div>
+        </div>
+        <div class="options" v-if="q.type != '填空题' && q.type != '主观题'">
+          <div v-for="(item, ii) in q.items" :key="ii" class="items">
+            <label>
+              <input
+                v-if="q.type == '多选题'"
+                :type="q.type == '多选题' ? 'checkbox' : 'radio'"
+                :name="i"
+                v-model="item.checked"
+              />
+              <input
+                v-else
+                :type="q.type == '多选题' ? 'checkbox' : 'radio'"
+                :name="i"
+                :value="ii"
+                v-model="q.select"
+              />
+
+              <span>{{ String.fromCharCode(65 + ii) }}</span>
+            </label>
+            <Editor
+              :id="'option' + i + '_' + ii"
+              v-model.trim="item.label"
+              @enter="newOption(q, i, ii)"
+              :placeholder="'选项'"
+              class="option"
+              @delete="delOptions(q, i, ii)"
+            ></Editor>
+            <span
+              v-if="q.type != '判断题' && q.items.length > 1"
+              class="del"
+              @click="delOptions(q, i, ii)"
+              >x</span
+            >
+          </div>
+        </div>
+
+        <div>
+          score:<input type="number" min="1" max="100" v-model="q.score" />
+        </div>
+        <div>
+          answer:
+
+          <template v-for="(o, oi) in q.items" :key="oi">
+            <span v-if="q.type == '多选题' && o.checked" class="selectAnswer">{{
+              String.fromCharCode(65 + oi)
+            }}</span>
+            <span
+              v-else-if="q.type != '多选题' && q.select === oi"
+              class="selectAnswer"
+              >{{ String.fromCharCode(65 + oi) }}</span
+            >
+          </template>
+        </div>
+        <div style="display: flex">
+          <label>
+            <span>analysis</span>
+          </label>
+          <div style="background: #fcf8e3">
+            <Editor v-model.trim="q.analysis"></Editor>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="op">
+      <a v-for="type in types" :key="type" @click="addQuestion(type)">{{
+        type
+      }}</a>
+    </div>
   </div>
 </template>
 <script setup>
